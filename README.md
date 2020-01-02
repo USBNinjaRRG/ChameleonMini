@@ -1,11 +1,16 @@
-Chameleon-Mini
+ChameleonMini & ChameleonTiny by ProxGrind
 ==============
-This is the NOT official repository of ChameleonMini, a freely programmable, portable tool for NFC security analysis that can emulate and clone contactless cards, read RFID tags and sniff/log RF data. Thanks to over 1700 backers from our [Kickstarter project](https://www.kickstarter.com/projects/1980078555/chameleonmini-a-versatile-nfc-card-emulator-and-mo), the current Revision G has been realized by Kasper & Oswald GmbH.
+This is the NOT official repository of ChameleonMini by Kasper & Oswald but the source code can be used interchangable, 
+
+ChameleonMini and ChameleonTiny by ProxGrind both are a freely programmable, portable tool for NFC security analysis that can emulate and clone contactless cards, read RFID tags and sniff/log RF data. 
 
 Our Project is based on the open-source project by ChameleonMini RevG by Kasper & Oswald [Webshop](https://shop.kasper.it/). 
 
 Our ChameleonMini / ChameleonTiny by ProxGrind is available on Indiegogo now. 
 [Here](https://www.indiegogo.com/campaigns/chameleonmini-rev-g-chameleontiny-by-proxgrind/)
+
+And in future on
+[Here](https://sneaktechnology.com/)
 
 First Steps
 -----------
@@ -18,11 +23,18 @@ See [here](https://github.com/emsec/ChameleonMini/wiki/Supported-Cards-and--Code
 
 Questions
 ---------
--
+If you face any issues on our repo, do post an [issues page](https://github.com/RfidResearchGroup/ChameleonMini/issues)
 
 External Contributions
 ----------------------
--
+We appreciate every contribution to the project. Have a look at the External Contributions page on the official project.
+
+Extra Shoutout to
+-Chris
+-Phillipe
+-Willok
+-WanHua
+-DXL
 
 Repository Structure
 --------------------
