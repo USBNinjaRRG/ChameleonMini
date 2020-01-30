@@ -35,6 +35,7 @@ typedef struct {
     uint16_t PendingTaskTimeout; /// Timeout for timeout commands for this setting, in multiples of 100 ms.
     uint16_t ReaderThreshold; /// Reader threshold
     uint8_t bSakMode; ///    MifareCard SAK_ATQA Setting
+	uint8_t bGtuMode; ///    MifareCard Temp Data Mode
 } SettingsEntryType;
 
 typedef struct {

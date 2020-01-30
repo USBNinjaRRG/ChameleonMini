@@ -331,6 +331,13 @@ const PROGMEM CommandEntryType CommandTable[] = {
         .GetFunc    = CommandGetSakMode
     },
     {
+        .Command    = COMMAND_SETGTUMODE,
+        .ExecFunc   = NO_FUNCTION,
+        .ExecParamFunc = NO_FUNCTION,
+        .SetFunc    = CommandSetGtuMode,
+        .GetFunc    = CommandGetGtuMode
+    },
+    {
         /* This has to be last element */
         .Command    = COMMAND_LIST_END,
         .ExecFunc   = NO_FUNCTION,

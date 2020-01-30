@@ -89,6 +89,9 @@
 #define CMD_CHINESE_UFUID_UNLOCK	0xE0
 
 
+//	GTU Mode
+#define		CARD_MODE_GTU			0x01
+#define		CARD_MODE_GTU2			0x02
 
 
 /*
@@ -485,6 +488,8 @@ void MifareClassicAppInit1K(void) {
     FromHalt = false;
     DetectionMode = false;
 
+	MifareClassicAppReset();
+
     if (GlobalSettings.ActiveSettingPtr->bSakMode) {
         MemoryReadBlock(&CardSAKValue, 5, 1);
         MemoryReadBlock(&CardATQAValue, 6, 2);
@@ -497,6 +502,8 @@ void MifareClassicAppInit1K7B(void) {
     CardSAKValue = MFCLASSIC_1K_SAK_VALUE;
     FromHalt = false;
     DetectionMode = false;
+
+	MifareClassicAppReset();
 }
 
 
@@ -506,6 +513,8 @@ void MifareClassicAppInit4K(void) {
     CardSAKValue = MFCLASSIC_4K_SAK_VALUE;
     FromHalt = false;
     DetectionMode = false;
+
+	MifareClassicAppReset();
 
     if (GlobalSettings.ActiveSettingPtr->bSakMode) {
         MemoryReadBlock(&CardSAKValue, 5, 1);
@@ -519,6 +528,8 @@ void MifareClassicAppInit4K7B(void) {
     CardSAKValue = MFCLASSIC_4K_SAK_VALUE;
     FromHalt = false;
     DetectionMode = false;
+
+	MifareClassicAppReset();
 }
 
 // 1K mode is used by default
@@ -528,6 +539,8 @@ void MifareDetectionInit1K(void) {
     CardSAKValue = MFCLASSIC_1K_SAK_VALUE;
     FromHalt = false;
     DetectionMode = true;
+
+	MifareClassicAppReset();
 
     DetectionLogToFlash(LOG_INFO_SYSTEM_BOOT, NULL, 0);
 
@@ -544,6 +557,8 @@ void MifareDetectionInit1K7B(void) {
     FromHalt = false;
     DetectionMode = true;
 
+	MifareClassicAppReset();
+
     DetectionLogToFlash(LOG_INFO_SYSTEM_BOOT, NULL, 0);
 }
 
@@ -552,6 +567,8 @@ void MifareDetectionInit4K(void) {
     CardATQAValue = MFCLASSIC_4K_ATQA_VALUE;
     CardSAKValue = MFCLASSIC_4K_SAK_VALUE;
     FromHalt = false;
+
+	MifareClassicAppReset();
 
     DetectionLogToFlash(LOG_INFO_SYSTEM_BOOT, NULL, 0);
 
@@ -567,11 +584,68 @@ void MifareDetectionInit4K7B(void) {
     CardSAKValue = MFCLASSIC_4K_SAK_VALUE;
     FromHalt = false;
 
+	MifareClassicAppReset();
+
     DetectionLogToFlash(LOG_INFO_SYSTEM_BOOT, NULL, 0);
 }
 
+//	Temp data area (16 * 18 = 288)
+#define		MAX_TEMP_DATA	16
+#define		TEMP_DATA_SIZE	(MEM_BYTES_PER_BLOCK + 2)
+uint8_t		bTempData[MAX_TEMP_DATA * TEMP_DATA_SIZE] = {0};
+
+//	Clean temp Data
+void TempDataClean(void) {
+	for (uint8_t i = 0; i < MAX_TEMP_DATA; i++) {
+		bTempData[i*TEMP_DATA_SIZE] = 0;
+	}
+}
+
+//	Write data to temp area
+void TempDataWrite(uint8_t BlockNo, uint8_t* Data) {
+	uint8_t		i;
+
+	for (i = 0; i < MAX_TEMP_DATA; i++) {
+		if (0 != bTempData[i*TEMP_DATA_SIZE] && bTempData[i*TEMP_DATA_SIZE + 1] == BlockNo) {
+			bTempData[i*TEMP_DATA_SIZE] = 1;
+			bTempData[i*TEMP_DATA_SIZE + 1] = BlockNo;
+
+			memcpy(&bTempData[i*TEMP_DATA_SIZE + 2], Data, MEM_BYTES_PER_BLOCK);
+		}
+	}
+
+	if (i == MAX_TEMP_DATA) {
+		for (uint8_t i = 0; i < MAX_TEMP_DATA; i++) {
+			if (0 == bTempData[i*TEMP_DATA_SIZE]) {
+				bTempData[i*TEMP_DATA_SIZE] = 1;
+				bTempData[i*TEMP_DATA_SIZE + 1] = BlockNo;
+
+				memcpy(&bTempData[i*TEMP_DATA_SIZE + 2], Data, MEM_BYTES_PER_BLOCK);
+			}
+		}
+	}
+}
+
+uint8_t TempDataRead(uint8_t BlockNo, uint8_t* Data) {
+	uint8_t		i;
+	uint8_t		bRet = 0;
+
+	for (i = 0; i < MAX_TEMP_DATA; i++) {
+		if (0 != bTempData[i*TEMP_DATA_SIZE] && bTempData[i*TEMP_DATA_SIZE + 1] == BlockNo) {
+			memcpy(Data, &bTempData[i*TEMP_DATA_SIZE + 2], MEM_BYTES_PER_BLOCK);
+			bRet = 1;
+		}
+	}
+
+	return bRet;
+}
+
 void MifareClassicAppReset(void) {
-    State = STATE_IDLE;
+	State = STATE_IDLE;
+
+	//	GTU2 Mode, Clean temp data when leave RF field
+	if (GlobalSettings.ActiveSettingPtr->bGtuMode & CARD_MODE_GTU2)
+		TempDataClean();
 }
 
 void MifareClassicAppTask(void) {
@@ -605,19 +679,13 @@ uint16_t MifareClassicAppProcess(uint8_t *Buffer, uint16_t BitCount) {
             if (ISO14443AWakeUp(Buffer, &BitCount, CardATQAValue, FromHalt)) {
                 State = STATE_READY1;
                 return BitCount;
+            } else if (Buffer[0] == CMD_CHINESE_UNLOCK && bUidMode){
+                State = STATE_CHINESE_IDLE;
+                Buffer[0] = ACK_VALUE;
+                return ACK_NAK_FRAME_SIZE;
             }
-//#ifdef SUPPORT_MF_CLASSIC_MAGIC_MODE
-            else if (Buffer[0] == CMD_CHINESE_UNLOCK) {
-                if (bUidMode) {
-                    State = STATE_CHINESE_IDLE;
-                    Buffer[0] = ACK_VALUE;
-                    return ACK_NAK_FRAME_SIZE;
-                }
-            }
-//#endif
             break;
 
-//#ifdef SUPPORT_MF_CLASSIC_MAGIC_MODE
         case STATE_CHINESE_IDLE:
             /* Support special china commands that dont require authentication. */
             if (Buffer[0] == CMD_CHINESE_UNLOCK_RW) {
@@ -693,7 +761,6 @@ uint16_t MifareClassicAppProcess(uint8_t *Buffer, uint16_t BitCount) {
             State = STATE_CHINESE_IDLE;
 
             return ACK_NAK_FRAME_SIZE;
-//#endif
 
         case STATE_READY1:
             if (ISO14443AWakeUp(Buffer, &BitCount, CardATQAValue, FromHalt)) {
@@ -853,7 +920,7 @@ uint16_t MifareClassicAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                     LogEntry(LOG_ERR_APP_NOT_AUTHED, NULL, 0);
 
                     return ACK_NAK_FRAME_SIZE;
-                } else if (Buffer[0] == 0xE0) {
+                } else if ((Buffer[0] == 0xE0) && (CardSAKValue & 0x20)) {
                     if (ISO14443ACheckCRCA(Buffer, CMD_READ_FRAME_SIZE)) {
                         Buffer[0] = 0x10;
                         Buffer[1] = 0x78;
@@ -1007,7 +1074,8 @@ uint16_t MifareClassicAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                                             MEM_KEY_SIZE);
                         }
                     } else {
-                        MemoryReadBlock(Buffer, (uint16_t) Buffer[1] * MEM_BYTES_PER_BLOCK, MEM_BYTES_PER_BLOCK);
+						if (0 == TempDataRead(Buffer[1], Buffer))
+	                        MemoryReadBlock(Buffer, (uint16_t) Buffer[1] * MEM_BYTES_PER_BLOCK, MEM_BYTES_PER_BLOCK);
                     }
                     ISO14443AAppendCRCA(Buffer, MEM_BYTES_PER_BLOCK);
 
@@ -1202,7 +1270,11 @@ uint16_t MifareClassicAppProcess(uint8_t *Buffer, uint16_t BitCount) {
                 LogEntry(LOG_INFO_APP_CMD_WRITE, Buffer, MEM_BYTES_PER_BLOCK + ISO14443A_CRCA_SIZE);
 
                 if (!ActiveConfiguration.ReadOnly) {
-                    MemoryWriteBlock(Buffer, CurrentAddress * MEM_BYTES_PER_BLOCK, MEM_BYTES_PER_BLOCK);
+					if (GlobalSettings.ActiveSettingPtr->bGtuMode & (CARD_MODE_GTU | CARD_MODE_GTU2)) {
+						TempDataWrite(CurrentAddress, Buffer);
+					} else {
+						MemoryWriteBlock(Buffer, CurrentAddress * MEM_BYTES_PER_BLOCK, MEM_BYTES_PER_BLOCK);
+					}
                 } else {
                     /* Silently ignore in ReadOnly mode */
                 }

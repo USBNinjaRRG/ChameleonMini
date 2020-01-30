@@ -743,9 +743,8 @@ CommandStatusIdType CommandSetSakMode(char *OutMessage, const char *InParam) {
     // save global configuration to EEPROM
     SettingsSave();
 
-    // 重新应用
+    // reset config
     ConfigurationSetById(GlobalSettings.ActiveSettingPtr->Configuration);
-
 
     return COMMAND_INFO_OK_ID;
 }
@@ -758,4 +757,43 @@ CommandStatusIdType CommandGetSakMode(char *OutMessage) {
 
     OutMessage[1] = '\0';
     return COMMAND_INFO_OK_WITH_TEXT_ID;
+}
+
+// GTUMODE Set the temp data mode
+CommandStatusIdType CommandSetGtuMode(char *OutMessage, const char *InParam) {
+	if (GlobalSettings.ActiveSettingPtr->Configuration != CONFIG_MF_CLASSIC_1K &&
+		GlobalSettings.ActiveSettingPtr->Configuration != CONFIG_MF_CLASSIC_4K &&
+		GlobalSettings.ActiveSettingPtr->Configuration != CONFIG_MF_DETECTION &&
+		GlobalSettings.ActiveSettingPtr->Configuration != CONFIG_MF_DETECTION_4K) {
+			return COMMAND_ERR_INVALID_USAGE_ID;
+	}
+	if (COMMAND_IS_SUGGEST_STRING(InParam)) {
+		snprintf_P(OutMessage, TERMINAL_BUFFER_SIZE, PSTR("%c,%c"), COMMAND_CHAR_TRUE, COMMAND_CHAR_FALSE);
+		return COMMAND_INFO_OK_WITH_TEXT_ID;
+	}
+
+	switch (InParam[0]) {
+	case '0':		//	GTU Off
+	case '1':		//	GTU Mode1
+	case '2':		//	GTU Mode2
+		GlobalSettings.ActiveSettingPtr->bGtuMode = InParam[0] - '0';
+		break;
+	default:
+		return COMMAND_ERR_INVALID_PARAM_ID;
+		break;
+	}
+
+	// save global configuration to EEPROM
+	SettingsSave();
+
+	// reset config
+	ConfigurationSetById(GlobalSettings.ActiveSettingPtr->Configuration);
+
+	return COMMAND_INFO_OK_ID;
+}
+
+CommandStatusIdType CommandGetGtuMode(char *OutMessage) {
+	OutMessage[0] = '0' + GlobalSettings.ActiveSettingPtr->bGtuMode;
+	OutMessage[1] = '\0';
+	return COMMAND_INFO_OK_WITH_TEXT_ID;
 }

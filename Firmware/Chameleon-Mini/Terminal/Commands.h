@@ -195,6 +195,10 @@ CommandStatusIdType CommandSetUidMode(char *OutMessage, const char *InParam);
 CommandStatusIdType CommandGetSakMode(char *OutMessage);
 CommandStatusIdType CommandSetSakMode(char *OutMessage, const char *InParam);
 
+#define COMMAND_SETGTUMODE   "GTUMODE"
+CommandStatusIdType CommandGetGtuMode(char *OutMessage);
+CommandStatusIdType CommandSetGtuMode(char *OutMessage, const char *InParam);
+
 #define COMMAND_LIST_END    ""
 /* Defines the end of command list. This is no actual command */
 
