@@ -8,7 +8,7 @@ Our ChameleonMini / ChameleonTiny by ProxGrind is available on Indiegogo now.
 [Done](https://www.indiegogo.com/campaigns/chameleonmini-rev-g-chameleontiny-by-proxgrind/)
 
 Our Asia & Oceania Reseller
-[Here](https://sneaktechnology.com/
+[Here](https://sneaktechnology.com/)
 
 Our Europe Reseller
 [Here](https://lab401.com/)
